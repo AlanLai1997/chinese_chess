@@ -1,0 +1,84 @@
+/* 遊戲結果對話框樣式 */
+.game-result-dialog {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(255, 255, 255, 0.95);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  z-index: 1000;
+}
+
+.result-text {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.button-container {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.dialog-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.dialog-btn.new-game {
+  background-color: #4caf50;
+  color: white;
+}
+
+.dialog-btn.home {
+  background-color: #666;
+  color: white;
+}
+
+.dialog-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+.dialog-btn:active {
+  transform: translateY(0);
+}
+
+/* 新局按鈕樣式 */
+.new-game-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 10px 20px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  z-index: 1000;
+  transition: background-color 0.3s;
+}
+
+.new-game-btn:hover {
+  background-color: #45a049;
+}
+
+.new-game-btn:active {
+  background-color: #3d8b40;
+}
+
+.new-game-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.3);
+}

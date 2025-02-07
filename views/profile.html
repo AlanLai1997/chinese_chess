@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <title>中國象棋 - 個人資料</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body>
+    <div class="main-container">
+      <header class="profile-header">
+        <h1>個人資料</h1>
+        <nav>
+          <button onclick="location.href='/game'" class="nav-btn">
+            返回遊戲
+          </button>
+          <button onclick="location.href='/api/auth/logout'" class="logout-btn">
+            登出
+          </button>
+        </nav>
+      </header>
+
+      <div class="profile-content">
+        <div class="profile-info">
+          <h2>基本資料</h2>
+          <form id="profileForm" class="profile-form">
+            <div class="form-group">
+              <label for="username">用戶名稱</label>
+              <input type="text" id="username" name="username" readonly />
+            </div>
+
+            <div class="form-group">
+              <label for="email">電子郵件</label>
+              <input type="email" id="email" name="email" readonly />
+            </div>
+
+            <div class="form-group">
+              <label>當前積分</label>
+              <span id="rating" class="rating-display"></span>
+            </div>
+          </form>
+        </div>
+
+        <div class="game-stats">
+          <h2>遊戲統計</h2>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <label>總場數</label>
+              <span id="totalGames">0</span>
+            </div>
+            <div class="stat-item">
+              <label>勝場</label>
+              <span id="wins">0</span>
+            </div>
+            <div class="stat-item">
+              <label>敗場</label>
+              <span id="losses">0</span>
+            </div>
+            <div class="stat-item">
+              <label>和局</label>
+              <span id="draws">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-history">
+          <h2>最近對戰記錄</h2>
+          <table id="historyTable" class="history-table">
+            <thead>
+              <tr>
+                <th>日期</th>
+                <th>對手</th>
+                <th>結果</th>
+                <th>積分變化</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script src="/js/profile.js"></script>
+  </body>
+</html>

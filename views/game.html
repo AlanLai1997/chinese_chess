@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <title>中國象棋 - 遊戲</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+    <link rel="stylesheet" href="/css/game.css" />
+    <link rel="stylesheet" href="/css/dialog.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+  </head>
+  <body>
+    <div class="main-container">
+      <header>
+        <h1>中國象棋對戰</h1>
+        <div class="user-info">
+          <div class="user-stats">
+            <span class="stats-item">
+              <i class="fas fa-trophy"></i>
+              勝場: <span id="winCount">0</span>
+            </span>
+            <span class="stats-item">
+              <i class="fas fa-times-circle"></i>
+              敗場: <span id="loseCount">0</span>
+            </span>
+            <span class="stats-item">
+              <i class="fas fa-star"></i>
+              積分: <span id="rating">1500</span>
+            </span>
+          </div>
+          歡迎, <span id="username"></span>
+          <button onclick="location.href='/api/auth/logout'" class="logout-btn">
+            登出
+          </button>
+        </div>
+      </header>
+
+      <div class="game-container">
+        <div class="game-controls">
+          <button id="findMatchBtn" class="control-btn">尋找對手</button>
+          <button id="surrenderBtn" class="control-btn" disabled>投降</button>
+          <button id="resetBtn" class="control-btn">重新開始</button>
+        </div>
+
+        <div class="game-status">
+          <p id="statusText">等待開始遊戲...</p>
+          <p id="waitingTime"></p>
+        </div>
+
+        <!-- 棋盤容器 -->
+        <div id="chessboard" class="chessboard">
+          <!-- 棋盤將由 JavaScript 動態生成 -->
+        </div>
+
+        <div class="game-settings">
+          <button id="cancelMatchBtn" class="settings-btn">取消配對</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/chess.js"></script>
+  </body>
+</html>

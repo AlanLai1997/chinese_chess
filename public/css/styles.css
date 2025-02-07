@@ -1,0 +1,56 @@
+/* Base styles */
+html,
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: url("../images/chess.png") no-repeat center center fixed;
+  background-size: cover;
+  font-family: "Microsoft YaHei", "SimHei", sans-serif;
+}
+
+/* Layout */
+.main-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  gap: 20px;
+  min-height: 100vh;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Title */
+h1 {
+  font-size: 2.5em;
+  color: #2c3e50;
+  margin: 0;
+  padding: 20px 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Common button styles */
+button {
+  padding: 12px 30px;
+  font-size: 1em;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Form styles */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #2c3e50;
+}

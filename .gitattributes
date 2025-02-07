@@ -1,0 +1,8 @@
+# 自動處理行尾符號
+* text=auto
+
+# 指定特定文件類型的行尾符號
+*.js text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.html text eol=lf 
