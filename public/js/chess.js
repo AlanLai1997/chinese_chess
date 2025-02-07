@@ -17,7 +17,6 @@ const offsetY = 23;
 // const boardElement = document.getElementById("chessboard");
 // const resetBtn = document.getElementById("resetBtn");
 let boardElement = null;
-let resetBtn = null;
 let socket;
 let currentGameId;
 let opponentId;
@@ -204,7 +203,6 @@ function initializeUI() {
 
   const findMatchBtn = document.getElementById("findMatchBtn");
   const surrenderBtn = document.getElementById("surrenderBtn");
-  const resetBtn = document.getElementById("resetBtn");
   const cancelMatchBtn = document.getElementById("cancelMatchBtn");
 
   if (findMatchBtn) {

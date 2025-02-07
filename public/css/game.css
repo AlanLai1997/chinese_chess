@@ -109,16 +109,6 @@ header h1 {
   border: 1px solid #cfd8dc;
 }
 
-#resetBtn {
-  background-color: #2196f3;
-  color: white;
-}
-
-#resetBtn:hover {
-  background-color: #e53935;
-  box-shadow: 0 4px 12px rgba(239, 83, 80, 0.3);
-}
-
 /* Chess cells */
 .cell {
   width: 40px;
@@ -294,13 +284,15 @@ header h1 {
 
 /* 按鈕樣式 */
 #surrenderBtn {
-  background-color: #f44336;
+  background-color: #e74c3c;
   color: white;
+  font-weight: bold;
 }
 
 #findMatchBtn {
-  background-color: #4caf50;
+  background-color: #2ecc71;
   color: white;
+  font-weight: bold;
 }
 
 /* 遊戲容器 */
@@ -369,8 +361,11 @@ header h1 {
 }
 
 .control-btn:disabled {
-  background-color: rgba(200, 200, 200, 0.9);
+  background-color: #95a5a6;
+  opacity: 0.7;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 /* 遊戲狀態樣式 */
@@ -488,44 +483,77 @@ header h1 {
 
 /* 修改遊戲控制按鈕容器 */
 .game-controls {
-  margin-top: 15px;
   display: flex;
-  gap: 10px;
-  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
-/* 確保棋盤容器大小正確 */
-#chessboard {
-  margin: 0;
-  position: relative;
+/* 控制按鈕基本樣式 */
+.control-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
 }
 
-/* 修改遊戲設置按鈕位置 */
+/* 開始配對按鈕 */
+#findMatchBtn:hover {
+  background-color: #27ae60;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(46, 204, 113, 0.4);
+}
+
+/* 投降按鈕 */
+#surrenderBtn:hover {
+  background-color: #c0392b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+}
+
+/* 禁用狀態 */
+.control-btn:disabled {
+  background-color: #95a5a6;
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 取消配對按鈕容器 */
 .game-settings {
   margin-top: 10px;
   text-align: center;
 }
 
-/* 取消配對按鈕樣式 */
+/* 取消配對按鈕 */
 #cancelMatchBtn {
-  background-color: #ff5252; /* 鮮豔的紅色 */
+  background-color: #e74c3c;
   color: white;
+  font-weight: bold;
   padding: 8px 16px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 #cancelMatchBtn:hover {
-  background-color: #ff1744; /* 更深的紅色 */
+  background-color: #c0392b;
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
 }
 
 #cancelMatchBtn:active {
   transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* 確保棋盤容器大小正確 */
+#chessboard {
+  margin: 0;
+  position: relative;
 }
