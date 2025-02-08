@@ -16,11 +16,14 @@ const PORT = process.env.PORT || 3000;
 const User = require("./src/models/user");
 const db = require("./src/config/database");
 const pgSession = require("connect-pg-simple")(session);
+const bodyParser = require('body-parser');
 
 // 中間件設置
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // 添加創建 session 表的函數
 async function createSessionTable() {

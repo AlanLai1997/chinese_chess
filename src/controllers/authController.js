@@ -190,19 +190,16 @@ exports.login = async (req, res) => {
     }
 
     // 查找用戶
-    const result = await db.query("SELECT * FROM users WHERE email = $1", [
-      email,
-    ]);
+    const result = await db.query(
+      "SELECT id, username, email, password_hash FROM users WHERE email = $1",
+      [email]
+    );
 
-    const user = result.rows[0];
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "用戶不存在",
-      });
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: "用戶不存在" });
     }
 
-    // 驗證密碼
+    const user = result.rows[0];
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
     if (!isValidPassword) {
       return res.status(401).json({
