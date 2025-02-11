@@ -1,7 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const path = require("path");
-const passport = require("passport");
+const passport = require("./src/config/passportConfig");
 const session = require("express-session");
 const gameRoutes = require("./src/routes/game");
 const authRoutes = require("./src/routes/auth");
@@ -16,14 +16,11 @@ const PORT = process.env.PORT || 3000;
 const User = require("./src/models/user");
 const db = require("./src/config/database");
 const pgSession = require("connect-pg-simple")(session);
-const bodyParser = require('body-parser');
 
 // 中間件設置
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 
 // 添加創建 session 表的函數
 async function createSessionTable() {
@@ -161,27 +158,4 @@ app.use((err, req, res, next) => {
     status: "error",
     message: "服務器內部錯誤",
   });
-});
-
-passport.serializeUser((user, done) => {
-  console.log("序列化用戶:", user);
-  done(null, user.id);
-});
-
-passport.deserializeUser(async (id, done) => {
-  console.log("反序列化用戶 ID:", id);
-  try {
-    const result = await db.query(
-      "SELECT id, username, email, rating FROM users WHERE id = $1",
-      [id]
-    );
-    if (result.rows[0]) {
-      done(null, result.rows[0]);
-    } else {
-      done(new Error("用戶未找到"), null);
-    }
-  } catch (error) {
-    console.error("反序列化錯誤:", error);
-    done(error, null);
-  }
 });
