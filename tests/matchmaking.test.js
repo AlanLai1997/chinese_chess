@@ -70,7 +70,7 @@ const waitForEvent = (socket, event, timeout = 5000) => {
 describe("配對系統測試", () => {
   let server;
   let clientSockets = [];
-  const PORT = 4000; // 修改為正確的端口
+  const TEST_PORT = 4000; // 使用不同的測試端口
 
   const testUsers = [
     { id: 1, username: "player1", rating: 1500 },
@@ -102,8 +102,8 @@ describe("配對系統測試", () => {
     setupGameSocket(ioServer);
 
     // 確保服務器完全啟動
-    server.listen(PORT, () => {
-      console.log(`Test server running on port ${PORT}`);
+    server.listen(TEST_PORT, () => {
+      console.log(`Test server running on port ${TEST_PORT}`);
       // 給服務器一點時間完全初始化
       setTimeout(done, 2000);
     });
@@ -157,7 +157,7 @@ describe("配對系統測試", () => {
   test("同時多人尋找配對應正確配對", async () => {
     try {
       const clients = await Promise.all(
-        testUsers.map((user) => createClient(user.id, PORT))
+        testUsers.map((user) => createClient(user.id, TEST_PORT))
       );
       clientSockets = clients;
 
@@ -221,8 +221,8 @@ describe("配對系統測試", () => {
 
   test("應該根據積分範圍進行配對", async () => {
     const [player1, player2] = await Promise.all([
-      createClient(testUsers[0].id, PORT),
-      createClient(testUsers[2].id, PORT), // 積分差距較大的玩家
+      createClient(testUsers[0].id, TEST_PORT),
+      createClient(testUsers[2].id, TEST_PORT), // 積分差距較大的玩家
     ]);
     clientSockets = [player1, player2];
 
@@ -247,7 +247,7 @@ describe("配對系統測試", () => {
   });
 
   test("取消配對應從等待隊列中移除", async () => {
-    const client = await createClient(testUsers[0].id, PORT);
+    const client = await createClient(testUsers[0].id, TEST_PORT);
     clientSockets = [client];
 
     let matchFound = false;
@@ -266,8 +266,8 @@ describe("配對系統測試", () => {
 
   test("斷線時應從等待隊列中移除", async () => {
     const [client1, client2] = await Promise.all([
-      createClient(testUsers[0].id, PORT),
-      createClient(testUsers[1].id, PORT),
+      createClient(testUsers[0].id, TEST_PORT),
+      createClient(testUsers[1].id, TEST_PORT),
     ]);
     clientSockets = [client1, client2];
 
@@ -289,7 +289,7 @@ describe("配對系統測試", () => {
   });
 
   test("重複加入配對隊列應被忽略", async () => {
-    const client = await createClient(testUsers[0].id, PORT);
+    const client = await createClient(testUsers[0].id, TEST_PORT);
     clientSockets = [client];
 
     let matchFoundCount = 0;
@@ -317,7 +317,7 @@ describe("配對系統壓力測試", () => {
   const CONCURRENT_USERS = 100;
   let server;
   let clients = [];
-  const PORT = 4001; // 使用不同的端口
+  const TEST_PORT = 4001; // 使用不同的測試端口
 
   const monitorMatches = (clients) => {
     const matches = new Set();
@@ -363,8 +363,8 @@ describe("配對系統壓力測試", () => {
 
       console.log("壓力測試 - 數據庫連接成功");
 
-      server.listen(PORT, () => {
-        console.log(`壓力測試服務器運行在端口 ${PORT}`);
+      server.listen(TEST_PORT, () => {
+        console.log(`壓力測試服務器運行在端口 ${TEST_PORT}`);
 
         setTimeout(() => {
           console.log("壓力測試服務器初始化完成");
@@ -399,7 +399,7 @@ describe("配對系統壓力測試", () => {
     }));
 
     clients = await Promise.all(
-      testUsers.map((user) => createClient(user.id, PORT))
+      testUsers.map((user) => createClient(user.id, TEST_PORT))
     );
 
     const { matches, matchPromises } = monitorMatches(clients);
@@ -431,7 +431,7 @@ describe("配對系統壓力測試", () => {
     }));
 
     const initialClients = await Promise.all(
-      testUsers.map((user) => createClient(user.id, PORT))
+      testUsers.map((user) => createClient(user.id, TEST_PORT))
     );
 
     const disconnectCount = Math.floor(RECONNECT_USERS / 4);
@@ -447,7 +447,7 @@ describe("配對系統壓力測試", () => {
     const reconnectedClients = await Promise.all(
       disconnectIndexes.map((index) => {
         return new Promise((resolve) => {
-          const socket = io(`http://localhost:${PORT}`, {
+          const socket = io(`http://localhost:${TEST_PORT}`, {
             auth: { userId: testUsers[index].id },
             transports: ["websocket"],
             reconnection: true, // 確保啟用重連

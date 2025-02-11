@@ -23,7 +23,7 @@ router.post("/login", ensureNotAuthenticated, login);
 router.get("/logout", ensureAuthenticated, logout);
 
 // 獲取當前用戶信息
-router.get("/current-user", getCurrentUser);
+router.get("/check", getCurrentUser);
 
 // Google OAuth 路由
 router.get(

@@ -10,9 +10,9 @@ const http = require("http");
 const socketIO = require("socket.io");
 const app = express();
 const server = http.createServer(app); // 創建 HTTP server
-const io = socketIO(server); // 初始化 Socket.IO
+const io = socketIO(server);
 const setupGameSocket = require("./src/websocket/gameSocket");
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 const User = require("./src/models/user");
 const db = require("./src/config/database");
 const pgSession = require("connect-pg-simple")(session);
@@ -114,36 +114,7 @@ createSessionTable().then(() => {
     }
   });
 
-  // Google OAuth 路由
-  app.get(
-    "/api/auth/google",
-    passport.authenticate("google", {
-      scope: ["profile", "email"],
-    })
-  );
-
-  // Google OAuth 回調路由
-  app.get(
-    "/api/auth/google/callback",
-    passport.authenticate("google", {
-      failureRedirect: "/login",
-      failureMessage: true,
-    }),
-    (req, res) => {
-      res.redirect("/game");
-    }
-  );
-
   // 登出路由
-  app.get("/api/auth/logout", (req, res) => {
-    req.logout((err) => {
-      if (err) {
-        console.error("登出錯誤:", err);
-        return res.status(500).json({ message: "登出過程中發生錯誤" });
-      }
-      res.redirect("/login");
-    });
-  });
 
   setupGameSocket(io);
   server.listen(PORT, () => {

@@ -31,17 +31,24 @@ const checkmateSound = new Audio("/sounds/checkmate.mp3");
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    // 初始化 socket
-    socket = io();
+    // 先检查认证状态
+    const authResponse = await fetch("/api/auth/check");
+    const authData = await authResponse.json();
 
-    // 設置 socket 事件監聽
+    if (!authData.isAuthenticated) {
+      window.location.href = "/login";
+      return;
+    }
+
+    // 认证成功后再创建 socket 连接
+    socket = io();
     setupSocketListeners();
+
+    // 立即发送认证信息
+    socket.emit("auth", authData.user.id);
 
     // 初始化 UI 元素
     initializeUI();
-
-    // 檢查認證狀態
-    await checkAuthAndConnect();
 
     // 在初始化時添加樣式
     addGameResultStyles();
