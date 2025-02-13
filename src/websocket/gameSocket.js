@@ -24,6 +24,7 @@ function setupGameSocket(io) {
     socket.on("auth", (userId) => {
       if (!userId) {
         console.log("Auth failed: No userId provided");
+        socket.emit("auth_error", { message: "未提供用戶ID" });
         return;
       }
 
@@ -64,11 +65,9 @@ function setupGameSocket(io) {
       console.error("Socket error:", error);
     });
 
-    socket.on("gameOver", async (data) => {
-      const { winner, loser } = data;
-      await updateUserStats(winner.id, true);
-      await updateUserStats(loser.id, false);
-      // ... 其他遊戲結束邏輯 ...
+    socket.on("gameOver", (data) => {
+      if (!isAuthenticated) return;
+      handler.handleGameOver(data);
     });
 
     // 设置连接超时
@@ -79,39 +78,6 @@ function setupGameSocket(io) {
       }
     }, 5000);
   });
-}
-
-async function updateUserStats(userId, isWinner) {
-  try {
-    const result = await db.query(
-      "SELECT wins, losses, rating FROM user_stats WHERE user_id = $1",
-      [userId]
-    );
-    const stats = result.rows;
-
-    if (stats.length === 0) {
-      // 創建初始記錄
-      await db.query(
-        "INSERT INTO user_stats (user_id, wins, losses, rating) VALUES ($1, $2, $3, $4)",
-        [userId, isWinner ? 1 : 0, isWinner ? 0 : 1, 1500]
-      );
-      return;
-    }
-
-    if (isWinner) {
-      await db.query(
-        "UPDATE user_stats SET wins = wins + 1, rating = rating + 25 WHERE user_id = $1",
-        [userId]
-      );
-    } else {
-      await db.query(
-        "UPDATE user_stats SET losses = losses + 1, rating = GREATEST(rating - 25, 0) WHERE user_id = $1",
-        [userId]
-      );
-    }
-  } catch (error) {
-    console.error("更新用戶戰績失敗:", error);
-  }
 }
 
 module.exports = setupGameSocket;

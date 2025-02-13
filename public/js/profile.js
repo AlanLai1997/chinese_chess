@@ -2,7 +2,6 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   loadProfile();
-  loadGameHistory();
 });
 
 async function loadProfile() {
@@ -30,42 +29,42 @@ async function loadProfile() {
   }
 }
 
-async function loadGameHistory() {
-  try {
-    const response = await fetch("/api/user/game-history");
-    const data = await response.json();
+// async function loadGameHistory() {
+//   try {
+//     const response = await fetch("/api/user/game-history");
+//     const data = await response.json();
 
-    if (response.ok) {
-      const historyBody = document.getElementById("historyBody");
-      historyBody.innerHTML = ""; // 清空現有內容
+//     if (response.ok) {
+//       const historyBody = document.getElementById("historyBody");
+//       historyBody.innerHTML = ""; // 清空現有內容
 
-      data.history.forEach((game) => {
-        const row = document.createElement("tr");
+//       data.history.forEach((game) => {
+//         const row = document.createElement("tr");
 
-        // 格式化日期
-        const date = new Date(game.date).toLocaleDateString("zh-TW");
+//         // 格式化日期
+//         const date = new Date(game.date).toLocaleDateString("zh-TW");
 
-        // 設置積分變化的樣式
-        const ratingChange = game.ratingChange;
-        const ratingChangeText =
-          ratingChange > 0 ? `+${ratingChange}` : ratingChange;
-        const ratingChangeClass =
-          ratingChange > 0 ? "text-success" : "text-danger";
+//         // 設置積分變化的樣式
+//         const ratingChange = game.ratingChange;
+//         const ratingChangeText =
+//           ratingChange > 0 ? `+${ratingChange}` : ratingChange;
+//         const ratingChangeClass =
+//           ratingChange > 0 ? "text-success" : "text-danger";
 
-        row.innerHTML = `
-            <td>${date}</td>
-            <td>${game.opponent}</td>
-            <td>${game.result}</td>
-            <td class="${ratingChangeClass}">${ratingChangeText}</td>
-          `;
+//         row.innerHTML = `
+//             <td>${date}</td>
+//             <td>${game.opponent}</td>
+//             <td>${game.result}</td>
+//             <td class="${ratingChangeClass}">${ratingChangeText}</td>
+//           `;
 
-        historyBody.appendChild(row);
-      });
-    } else {
-      alert("獲取對戰記錄失敗：" + data.message);
-    }
-  } catch (error) {
-    console.error("載入對戰記錄時發生錯誤:", error);
-    alert("載入對戰記錄時發生錯誤，請稍後再試。");
-  }
-}
+//         historyBody.appendChild(row);
+//       });
+//     } else {
+//       alert("獲取對戰記錄失敗：" + data.message);
+//     }
+//   } catch (error) {
+//     console.error("載入對戰記錄時發生錯誤:", error);
+//     alert("載入對戰記錄時發生錯誤，請稍後再試。");
+//   }
+// }

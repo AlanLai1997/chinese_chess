@@ -1,5 +1,4 @@
 // handlers/GameEventHandler.js
-const GameState = require("../models/GameState");
 const User = require("../models/user");
 const Game = require("../models/game");
 const GameLogic = require("../utils/gameLogic");
@@ -14,11 +13,7 @@ class GameEventHandler {
   }
 
   handleAuth(socket, userId) {
-    if (!userId) {
-      console.error("Auth failed: No userId provided");
-      socket.emit("auth_error", { message: "未提供用戶ID" });
-      return;
-    }
+    console.log(`User ${userId} authenticated with socket ${socket.id}`);
 
     // 檢查是否已經有其他連接使用相同的用戶ID
     for (let [socketId, existingUserId] of this.onlineUsers.entries()) {
@@ -29,7 +24,6 @@ class GameEventHandler {
       }
     }
 
-    console.log(`User ${userId} authenticated with socket ${socket.id}`);
     this.onlineUsers.set(socket.id, userId);
     socket.userId = userId;
 

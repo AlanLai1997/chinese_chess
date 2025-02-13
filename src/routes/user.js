@@ -17,13 +17,7 @@ router.get("/profile", async (req, res) => {
     );
 
     const statsQuery = await db.query(
-      `SELECT 
-        COUNT(*) as total_games,
-        SUM(CASE WHEN result = 'win' THEN 1 ELSE 0 END) as wins,
-        SUM(CASE WHEN result = 'loss' THEN 1 ELSE 0 END) as losses,
-        SUM(CASE WHEN result = 'draw' THEN 1 ELSE 0 END) as draws
-       FROM games 
-       WHERE user_id = $1`,
+      `SELECT wins, losses, rating FROM user_stats WHERE user_id = $1`,
       [req.user.id]
     );
 
@@ -33,12 +27,12 @@ router.get("/profile", async (req, res) => {
     res.json({
       username: user.username,
       email: user.email,
-      rating: user.rating,
+      rating: stats.rating,
       stats: {
-        totalGames: parseInt(stats.total_games),
-        wins: parseInt(stats.wins),
-        losses: parseInt(stats.losses),
-        draws: parseInt(stats.draws),
+        totalGames: parseInt(stats.wins, 10) + parseInt(stats.losses, 10),
+        wins: parseInt(stats.wins, 10),
+        losses: parseInt(stats.losses, 10),
+        draws: 0,
       },
     });
   } catch (error) {
@@ -48,39 +42,39 @@ router.get("/profile", async (req, res) => {
 });
 
 // 獲取對戰歷史
-router.get("/game-history", async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ message: "未登入" });
-  }
+// router.get("/game-history", async (req, res) => {
+//   if (!req.isAuthenticated()) {
+//     return res.status(401).json({ message: "未登入" });
+//   }
 
-  try {
-    const historyQuery = await db.query(
-      `SELECT 
-        g.date,
-        u2.username as opponent,
-        g.result,
-        g.rating_change
-       FROM games g
-       LEFT JOIN users u2 ON g.opponent_id = u2.id
-       WHERE g.user_id = $1
-       ORDER BY g.date DESC
-       LIMIT 10`,
-      [req.user.id]
-    );
+//   try {
+//     const historyQuery = await db.query(
+//       `SELECT
+//         g.created_at,
+//         u2.username as opponent,
+//         g.result,
+//         g.rating_change
+//        FROM games g
+//        LEFT JOIN users u2 ON g.opponent_id = u2.id
+//        WHERE g.user_id = $1
+//        ORDER BY g.date DESC
+//        LIMIT 10`,
+//       [req.user.id]
+//     );
 
-    res.json({
-      history: historyQuery.rows.map((game) => ({
-        date: game.date,
-        opponent: game.opponent,
-        result: game.result,
-        ratingChange: game.rating_change,
-      })),
-    });
-  } catch (error) {
-    console.error("獲取對戰歷史錯誤:", error);
-    res.status(500).json({ message: "獲取對戰歷史失敗" });
-  }
-});
+//     res.json({
+//       history: historyQuery.rows.map((game) => ({
+//         date: game.created_at,
+//         opponent: game.opponent,
+//         result: game.result,
+//         ratingChange: game.rating_change,
+//       })),
+//     });
+//   } catch (error) {
+//     console.error("獲取對戰歷史錯誤:", error);
+//     res.status(500).json({ message: "獲取對戰歷史失敗" });
+//   }
+// });
 
 router.get("/current", (req, res) => {
   if (!req.isAuthenticated()) {

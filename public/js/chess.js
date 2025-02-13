@@ -29,23 +29,33 @@ const captureSound = new Audio("/sounds/capture.mp3");
 const checkSound = new Audio("/sounds/check.mp3");
 const checkmateSound = new Audio("/sounds/checkmate.mp3");
 
+// 新增函数，将认证检查逻辑单独封装
+async function checkAuth() {
+  const response = await fetch("/api/auth/check");
+  const data = await response.json();
+  if (data.isAuthenticated && data.user) {
+    console.log("用戶已登入:", data.user);
+    // 更新用戶界面
+    const usernameSpan = document.getElementById("username");
+    if (usernameSpan) {
+      usernameSpan.textContent = data.user.username;
+    }
+    enableGameControls();
+    return data.user;
+  } else {
+    throw new Error("未登入或會話已過期");
+  }
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    // 先检查认证状态
-    const authResponse = await fetch("/api/auth/check");
-    const authData = await authResponse.json();
+    // 调用封装的认证函数，确保用户已登录并更新界面
+    const user = await checkAuth();
 
-    if (!authData.isAuthenticated) {
-      window.location.href = "/login";
-      return;
-    }
-
-    // 认证成功后再创建 socket 连接
+    // 创建 socket 连接及后续相关操作
     socket = io();
     setupSocketListeners();
-
-    // 立即发送认证信息
-    socket.emit("auth", authData.user.id);
+    socket.emit("auth", user.id);
 
     // 初始化 UI 元素
     initializeUI();
@@ -176,26 +186,6 @@ function setupSocketListeners() {
       console.error("更新戰績顯示失敗:", error);
     }
   });
-}
-
-async function checkAuthAndConnect() {
-  const response = await fetch("/api/auth/check");
-  const data = await response.json();
-
-  if (data.isAuthenticated && data.user) {
-    console.log("用戶已登入:", data.user);
-    socket.emit("auth", data.user.id);
-
-    // 更新用戶界面
-    const usernameSpan = document.getElementById("username");
-    if (usernameSpan) {
-      usernameSpan.textContent = data.user.username;
-    }
-
-    enableGameControls();
-  } else {
-    throw new Error("未登入或會話已過期");
-  }
 }
 
 function initializeUI() {
@@ -495,12 +485,6 @@ async function onEmptyCellClick(event) {
 }
 
 function resetGame() {
-  fullReset();
-}
-
-// 修改 fullReset 函數
-function fullReset() {
-  // 移除所有動畫效果和按鈕
   removeAllAnimations();
   const newGameBtn = document.querySelector(".new-game-btn");
   if (newGameBtn) {
@@ -560,7 +544,6 @@ function fullReset() {
   // 回到等待配對狀態
   hideWaitingScreen();
 }
-
 async function handleMoveResult(moveResult) {
   if (moveResult.status === "OK") {
     // 检查是否有吃子 - 通过检查目标位置是否有棋子
@@ -654,22 +637,6 @@ async function movePiece(fromRow, fromCol, toRow, toCol) {
   } else {
     throw new Error(data.message);
   }
-}
-
-function getUserId() {
-  // 從 localStorage 獲取用戶ID
-  const userId = localStorage.getItem("userId");
-  if (!userId) {
-    console.error("未找到用戶ID");
-    window.location.href = "/"; // 如果沒有用戶ID，重定向到登入頁面
-    return null;
-  }
-  // 設置隱藏輸入框的值
-  const userIdInput = document.getElementById("userId");
-  if (userIdInput) {
-    userIdInput.value = userId;
-  }
-  return userId;
 }
 
 function startWaitingTimer() {
@@ -965,7 +932,7 @@ function showGameResultDialog(winner) {
   newGameBtn.className = "dialog-btn new-game";
   newGameBtn.onclick = () => {
     dialog.remove();
-    fullReset();
+    resetGame();
     socket.emit("findMatch");
     showWaitingScreen();
   };
@@ -976,7 +943,7 @@ function showGameResultDialog(winner) {
   homeBtn.className = "dialog-btn home";
   homeBtn.onclick = () => {
     dialog.remove();
-    fullReset();
+    resetGame();
     const findMatchBtn = document.getElementById("findMatchBtn");
     if (findMatchBtn) {
       findMatchBtn.disabled = false;

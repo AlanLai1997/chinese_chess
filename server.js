@@ -3,7 +3,6 @@ const express = require("express");
 const path = require("path");
 const passport = require("./src/config/passportConfig");
 const session = require("express-session");
-const gameRoutes = require("./src/routes/game");
 const authRoutes = require("./src/routes/auth");
 const userRoutes = require("./src/routes/user");
 const http = require("http");
@@ -13,7 +12,6 @@ const server = http.createServer(app); // 創建 HTTP server
 const io = socketIO(server);
 const setupGameSocket = require("./src/websocket/gameSocket");
 const PORT = 3000;
-const User = require("./src/models/user");
 const db = require("./src/config/database");
 const pgSession = require("connect-pg-simple")(session);
 
@@ -68,8 +66,7 @@ createSessionTable().then(() => {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // 路由
-  app.use("/api/game", gameRoutes);
+  // // 路由
   app.use("/api/auth", authRoutes);
   app.use("/api/user", userRoutes);
 
