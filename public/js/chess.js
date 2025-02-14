@@ -78,6 +78,7 @@ function setupSocketListeners() {
 
   socket.on("auth_success", (data) => {
     console.log("認證成功:", data);
+    socket.userId = data.userId; // 保存 userId 到 socket 對象
     enableGameControls();
   });
 
@@ -158,23 +159,29 @@ function setupSocketListeners() {
     updateTurnIndicator();
   });
 
-  socket.on("gameOver", (data) => {
+  socket.on("gameover", (data) => {
     console.log("遊戲結束:", data);
+    console.log("當前用戶ID:", socket.userId); // 用於調試
 
     if (data.reason === "checkmate") {
       // 將死結束的情況已在 moveMade 事件中處理
       return;
     }
 
-    // 其他結束原因（如對手斷線）
-    const message =
-      data.reason === "對手斷開連接"
-        ? "對手已離開遊戲"
-        : `遊戲結束，${data.winner}方獲勝`;
+    // 根據不同結束原因顯示不同消息
+    let message;
+    if (data.reason === "surrender") {
+      // 如果我是獲勝者，就是對方投
+      message = `遊戲結束 - ${
+        data.winner === socket.userId ? "對方" : "我方"
+      }投降`;
+    } else if (data.reason === "對手斷開連接") {
+      message = "對手已離開遊戲";
+    } else {
+      message = `遊戲結束，${data.winner}方獲勝`;
+    }
 
     alert(message);
-
-    // 重置遊戲
     resetGame();
   });
 
@@ -227,7 +234,14 @@ function initializeUI() {
 
   // 禁用投降按鈕（直到遊戲開始）
   if (surrenderBtn) {
-    surrenderBtn.disabled = true;
+    surrenderBtn.disabled = true; // 初始時禁用
+    surrenderBtn.addEventListener("click", () => {
+      if (confirm("確定要投降嗎？")) {
+        console.log("投降按鈕被點擊");
+        console.log("當前遊戲ID:", currentGameId);
+        socket.emit("surrender", { gameId: currentGameId });
+      }
+    });
   }
 }
 
@@ -514,13 +528,19 @@ function resetGame() {
 
   // 重置 UI 元素
   const findMatchBtn = document.getElementById("findMatchBtn");
+  const surrenderBtn = document.getElementById("surrenderBtn");
+  const profileBtn = document.getElementById("profileBtn");
+
   if (findMatchBtn) {
     findMatchBtn.disabled = false;
   }
 
-  const surrenderBtn = document.getElementById("surrenderBtn");
   if (surrenderBtn) {
     surrenderBtn.disabled = true;
+  }
+
+  if (profileBtn) {
+    profileBtn.disabled = false; // 遊戲結束時重新啟用個人資料按鈕
   }
 
   const statusText = document.getElementById("statusText");
@@ -728,8 +748,12 @@ function handleMatchFound(data) {
 
   // 啟用投降按鈕
   const surrenderBtn = document.getElementById("surrenderBtn");
+  const profileBtn = document.getElementById("profileBtn");
   if (surrenderBtn) {
     surrenderBtn.disabled = false;
+  }
+  if (profileBtn) {
+    profileBtn.disabled = true; // 遊戲開始時禁用個人資料按鈕
   }
 }
 

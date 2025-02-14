@@ -247,15 +247,45 @@ class GameEventHandler {
   }
 
   async handleSurrender(socket, data) {
+    console.log("收到投降請求:", data);
     const { gameId } = data;
-    if (!socket.opponent) return;
 
+    // 從 gameStates 獲取遊戲狀態
+    const gameState = this.gameStates.get(gameId);
+    if (!gameState) {
+      console.log("找不到遊戲狀態:", gameId);
+      return;
+    }
+
+    // 確定投降方和獲勝方
+    const surrenderingPlayer = socket.userId;
+    const winner =
+      gameState.players.red === surrenderingPlayer
+        ? gameState.players.black
+        : gameState.players.red;
+
+    console.log("投降方:", surrenderingPlayer);
+    console.log("獲勝方:", winner);
+
+    // 發送遊戲結束事件
     this.io.to(gameId).emit("gameover", {
-      winner: socket.opponent,
+      winner: winner,
       reason: "surrender",
     });
 
-    await this.updateGameStats(gameId, socket.opponent);
+    // 更新遊戲統計
+    try {
+      // 更新勝者戰績
+      await this.updateUserStats(winner, true);
+
+      // 更新敗者戰績
+      await this.updateUserStats(surrenderingPlayer, false);
+
+      // 通知前端更新戰績顯示
+      this.io.to(gameId).emit("statsUpdated");
+    } catch (error) {
+      console.error("更新戰績失敗:", error);
+    }
   }
 
   handleDisconnect(socket) {

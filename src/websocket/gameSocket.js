@@ -46,6 +46,7 @@ function setupGameSocket(io) {
     });
 
     socket.on("surrender", (data) => {
+      console.log("gameSocket 收到投降事件:", data);
       if (!isAuthenticated) return;
       handler.handleSurrender(socket, data);
     });
