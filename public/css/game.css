@@ -557,3 +557,31 @@ header h1 {
   margin: 0;
   position: relative;
 }
+
+.header-controls {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
+}
+
+.profile-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: #4a4a4a;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.profile-btn:hover {
+  background-color: #666;
+}
+
+.profile-btn i {
+  font-size: 1.2em;
+}

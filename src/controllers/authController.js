@@ -4,7 +4,7 @@ const {
   validateEmail,
   validateUsername,
   validatePassword,
-} = require("../utils/ratingCalculator");
+} = require("../utils/userValidator");
 const db = require("../config/database");
 
 // 註冊控制器

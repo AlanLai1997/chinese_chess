@@ -1,0 +1,182 @@
+.profile-container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 20px;
+  background-color: transparent;
+  border-radius: 8px;
+}
+
+.profile-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.profile-header h1 {
+  font-size: 2.5em;
+  color: #2c3e50;
+  margin-bottom: 20px;
+  font-family: "楷體-繁", "楷體", "標楷體", serif;
+}
+
+nav {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.nav-btn,
+.logout-btn {
+  padding: 10px 25px;
+  border: none;
+  border-radius: 5px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.nav-btn {
+  background-color: #3498db;
+  color: white;
+}
+
+.logout-btn {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.nav-btn:hover,
+.logout-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.profile-info {
+  margin: 20px 0;
+  padding: 0 50px;
+}
+
+/* 基本資料標題容器 */
+.basic-info-title {
+  border-radius: 4px;
+  margin: 0 0 30px 50px;
+}
+
+.basic-info-title h2 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 2.2em;
+  font-family: "楷體-繁", "楷體", "標楷體", serif;
+}
+
+.form-group {
+  margin-bottom: 30px;
+}
+
+.form-group label {
+  display: inline;
+  color: #2c3e50;
+  font-size: 1.5em;
+  font-family: "楷體-繁", "楷體", "標楷體", serif;
+}
+
+.form-group input {
+  display: inline;
+  border: none;
+  background: transparent;
+  font-size: 1.5em;
+}
+
+.form-group label::after {
+  content: ":";
+  margin: 0 8px;
+}
+
+.back-btn {
+  padding: 10px 20px;
+  background-color: #4a4a4a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.back-btn:hover {
+  background-color: #666;
+}
+
+@media (max-width: 768px) {
+  .profile-info {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 當前積分樣式 */
+.rating-group label {
+  color: #2c3e50;
+  font-size: 1.5em;
+  font-family: "楷體-繁", "楷體", "標楷體", serif;
+}
+
+.rating-group .rating-display {
+  font-size: 2.5em;
+  font-weight: bold;
+  color: #f39c12;
+  display: inline-block;
+}
+
+/* 遊戲統計樣式 */
+.game-stats {
+  margin-top: 40px;
+  padding: 0 50px;
+}
+
+.game-stats h2 {
+  color: #2c3e50;
+  font-size: 2.2em;
+  font-family: "楷體-繁", "楷體", "標楷體", serif;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin: 0;
+}
+
+.stat-item {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.stat-item label {
+  color: #2c3e50;
+  font-size: 1.5em;
+  font-family: "楷體-繁", "楷體", "標楷體", serif;
+  min-width: 70px;
+}
+
+.stat-item span {
+  font-size: 1.5em;
+  color: #2c3e50;
+  margin-left: 10px;
+}
+
+/* 統一所有文字的字體 */
+* {
+  font-family: "楷體-繁", "楷體", "標楷體", serif;
+}

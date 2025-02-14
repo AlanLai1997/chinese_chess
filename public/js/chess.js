@@ -195,6 +195,14 @@ function initializeUI() {
     return;
   }
 
+  // 添加個人資料按鈕點擊事件
+  const profileBtn = document.getElementById("profileBtn");
+  if (profileBtn) {
+    profileBtn.addEventListener("click", () => {
+      window.location.href = "/profile";
+    });
+  }
+
   // 初始化空棋盤
   renderEmptyBoard();
 

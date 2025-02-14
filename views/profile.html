@@ -4,6 +4,11 @@
     <meta charset="UTF-8" />
     <title>中國象棋 - 個人資料</title>
     <link rel="stylesheet" href="/css/styles.css" />
+    <link rel="stylesheet" href="/css/profile.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
   </head>
   <body>
     <div class="main-container">
@@ -20,8 +25,10 @@
       </header>
 
       <div class="profile-content">
-        <div class="profile-info">
+        <div class="basic-info-title">
           <h2>基本資料</h2>
+        </div>
+        <div class="profile-info">
           <form id="profileForm" class="profile-form">
             <div class="form-group">
               <label for="username">用戶名稱</label>
@@ -33,7 +40,7 @@
               <input type="email" id="email" name="email" readonly />
             </div>
 
-            <div class="form-group">
+            <div class="form-group rating-group">
               <label>當前積分</label>
               <span id="rating" class="rating-display"></span>
             </div>
