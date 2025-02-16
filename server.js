@@ -127,3 +127,5 @@ app.use((err, req, res, next) => {
     message: "服務器內部錯誤",
   });
 });
+
+module.exports = app;

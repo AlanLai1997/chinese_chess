@@ -12,6 +12,19 @@ class GameEventHandler {
     this.waitingPlayers = waitingPlayers;
   }
 
+  // 檢查玩家是否在遊戲中
+  isUserInGame(userId) {
+    for (const [_, gameState] of this.gameStates) {
+      if (
+        gameState.players.red === userId ||
+        gameState.players.black === userId
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   handleAuth(socket, userId) {
     console.log(`User ${userId} authenticated with socket ${socket.id}`);
 
@@ -40,6 +53,13 @@ class GameEventHandler {
     }
 
     console.log(`用戶 ${userId} 請求配對`);
+
+    // 檢查玩家是否已在遊戲中
+    if (this.isUserInGame(userId)) {
+      console.log(`用戶 ${userId} 已在遊戲中`);
+      socket.emit("error", { message: "您已在遊戲中" });
+      return;
+    }
 
     // 檢查是否已在等待列表中
     if (this.isUserWaiting(userId)) {
@@ -83,11 +103,26 @@ class GameEventHandler {
     const gameId = this.generateGameId();
     console.log(`創建遊戲 ${gameId}: ${userId} vs ${opponent.userId}`);
 
+    // 從等待列表中移除雙方玩家
     this.waitingPlayers.delete(opponent);
+    for (const player of this.waitingPlayers) {
+      if (player.userId === userId) {
+        this.waitingPlayers.delete(player);
+        break;
+      }
+    }
 
     const opponentSocket = this.io.sockets.sockets.get(opponent.socketId);
     if (!opponentSocket) {
       console.log(`對手 socket ${opponent.socketId} 未找到`);
+      // 如果對手斷線，將當前玩家加回等待列表
+      this.addToWaitingList(socket, userId);
+      return;
+    }
+
+    // 檢查雙方是否已在遊戲中
+    if (this.isUserInGame(userId) || this.isUserInGame(opponent.userId)) {
+      console.log("玩家已在其他遊戲中，取消配對");
       return;
     }
 
@@ -108,6 +143,8 @@ class GameEventHandler {
     // 保存遊戲狀態
     this.gameStates.set(gameId, gameState);
 
+    console.log(`遊戲狀態已創建: ${gameId}`);
+
     // 通知雙方
     socket.emit("matchFound", {
       gameId,
@@ -122,6 +159,7 @@ class GameEventHandler {
     // 將玩家加入遊戲房間
     socket.join(gameId);
     opponentSocket.join(gameId);
+    console.log(`玩家已加入遊戲房間: ${gameId}`);
   }
 
   // 設置初始棋盤

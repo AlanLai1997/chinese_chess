@@ -12,9 +12,10 @@ exports.register = async (req, res) => {
   const { username, email, password } = req.body;
 
   // 輸入驗證
-  if (!validateUsername(username)) {
+  const usernameValidation = validateUsername(username);
+  if (!usernameValidation.isValid) {
     return res.status(400).json({
-      message: "用戶名必須是3-20個字符，只能包含字母、數字、底線和中文",
+      message: usernameValidation.error,
     });
   }
 
