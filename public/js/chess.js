@@ -49,10 +49,10 @@ async function checkAuth() {
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    // 调用封装的认证函数，确保用户已登录并更新界面
+    // 調用封裝的認證函數，確保用戶已登入並更新界面
     const user = await checkAuth();
 
-    // 创建 socket 连接及后续相关操作
+    // 創建 socket 連接及後續相關操作
     socket = io();
     setupSocketListeners();
     socket.emit("auth", user.id);
@@ -79,6 +79,12 @@ function setupSocketListeners() {
   socket.on("auth_success", (data) => {
     console.log("認證成功:", data);
     socket.userId = data.userId; // 保存 userId 到 socket 對象
+
+    // 如果有未完成的遊戲信息，嘗試重連
+    if (data.gameInfo) {
+      console.log("檢測到未完成的遊戲，嘗試重連...");
+      socket.emit("reconnect");
+    }
     enableGameControls();
   });
 
@@ -192,6 +198,44 @@ function setupSocketListeners() {
     } catch (error) {
       console.error("更新戰績顯示失敗:", error);
     }
+  });
+
+  // 監聽對手狀態變化
+  socket.on("opponent_status", (data) => {
+    alert(data.message);
+  });
+
+  // 監聽遊戲狀態同步
+  socket.on("game_state_sync", (data) => {
+    console.log("收到遊戲狀態同步:", data);
+    currentBoard = data.gameState;
+    gameState.currentPlayer = data.currentTurn;
+    playerRole = data.role;
+    currentGameId = data.gameId;
+
+    // 更新遊戲界面
+    const statusText = document.getElementById("statusText");
+    if (statusText) {
+      statusText.textContent = `遊戲進行中！你是${
+        playerRole === "red" ? "紅方" : "黑方"
+      }`;
+    }
+
+    // 啟用投降按鈕
+    const surrenderBtn = document.getElementById("surrenderBtn");
+    if (surrenderBtn) {
+      surrenderBtn.disabled = false;
+    }
+
+    renderBoard();
+  });
+
+  socket.on("opponent_disconnected", (data) => {
+    alert(data.message);
+  });
+
+  socket.on("opponent_reconnected", (data) => {
+    alert(data.message);
   });
 }
 

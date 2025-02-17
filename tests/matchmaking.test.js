@@ -249,29 +249,29 @@ describe("配對系統測試", () => {
     expect(matchFound).toBe(false);
   });
 
-  // test("斷線時應從等待隊列中移除", async () => {
-  //   const [client1, client2] = await Promise.all([
-  //     createClient(testUsers[0].id, TEST_PORT),
-  //     createClient(testUsers[1].id, TEST_PORT),
-  //   ]);
-  //   clientSockets = [client1, client2];
+  test("斷線時應從等待隊列中移除", async () => {
+    const [client1, client2] = await Promise.all([
+      createClient(testUsers[0].id, TEST_PORT),
+      createClient(testUsers[1].id, TEST_PORT),
+    ]);
+    clientSockets = [client1, client2];
 
-  //   let client2MatchFound = false;
-  //   client2.on("matchFound", () => {
-  //     client2MatchFound = true;
-  //   });
+    let client2MatchFound = false;
+    client2.on("matchFound", () => {
+      client2MatchFound = true;
+    });
 
-  //   client1.emit("findMatch");
-  //   client2.emit("findMatch");
+    client1.emit("findMatch");
+    client2.emit("findMatch");
 
-  //   // 模擬client1斷線
-  //   await new Promise((resolve) => setTimeout(resolve, 100));
-  //   client1.close();
+    // 模擬client1斷線
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    client1.close();
 
-  //   // 等待確保client2沒有收到配對
-  //   await new Promise((resolve) => setTimeout(resolve, 1000));
-  //   expect(client2MatchFound).toBe(false);
-  // });
+    // 等待確保client2沒有收到配對
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    expect(client2MatchFound).toBe(false);
+  });
 
   test("重複加入配對隊列應被忽略", async () => {
     const client = await createClient(testUsers[0].id, TEST_PORT);
@@ -295,6 +295,51 @@ describe("配對系統測試", () => {
       expect(status.inQueue).toBe(true);
       expect(status.queueTime).toBeDefined();
     });
+  });
+
+  test.only("玩家斷線後可以重連", async () => {
+    const { clients, users } = await setupTestClients(2);
+    const [player1, player2] = clients;
+
+    // 開始遊戲
+    await startGame(player1, player2);
+
+    // 模擬玩家1斷線
+    player1.disconnect();
+
+    // 等待一段時間後重連
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // 重新連接
+    const reconnectedPlayer = await reconnectPlayer(users[0]);
+
+    // 驗證重連成功
+    expect(reconnectedPlayer.connected).toBe(true);
+  });
+
+  test("玩家斷線超時後對手獲勝", async () => {
+    const { clients, users } = await setupTestClients(2);
+    const [player1, player2] = clients;
+
+    // 開始遊戲
+    await startGame(player1, player2);
+
+    // 模擬玩家1斷線
+    player1.disconnect();
+
+    // 等待超時
+    await new Promise((resolve) => setTimeout(resolve, 65000));
+
+    // 驗證對手獲勝
+    const gameEndPromise = new Promise((resolve) => {
+      player2.on("game_end", (data) => {
+        expect(data.winner).toBe(users[1].id);
+        expect(data.reason).toBe("opponent_disconnect_timeout");
+        resolve();
+      });
+    });
+
+    await gameEndPromise;
   });
 });
 

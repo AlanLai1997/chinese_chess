@@ -71,6 +71,11 @@ function setupGameSocket(io) {
       handler.handleGameOver(data);
     });
 
+    // 監聽重連事件
+    socket.on("reconnect", () => {
+      handler.handleReconnect(socket);
+    });
+
     // 设置连接超时
     setTimeout(() => {
       if (!isAuthenticated) {

@@ -10,6 +10,8 @@ class GameEventHandler {
     this.gameStates = gameStates;
     this.onlineUsers = onlineUsers;
     this.waitingPlayers = waitingPlayers;
+    this.disconnectedPlayers = new Map(); // 記錄斷線的玩家和斷線時間
+    this.RECONNECT_TIMEOUT = 60000; // 斷線重連超時時間（60秒）
   }
 
   // 檢查玩家是否在遊戲中
@@ -40,8 +42,32 @@ class GameEventHandler {
     this.onlineUsers.set(socket.id, userId);
     socket.userId = userId;
 
-    // 通知客戶端認證成功
-    socket.emit("auth_success", { userId });
+    // 檢查是否有未完成的遊戲
+    let currentGame = null;
+    let gameId = null;
+
+    for (const [id, game] of this.gameStates) {
+      if (game.players.red === userId || game.players.black === userId) {
+        currentGame = game;
+        gameId = id;
+        break;
+      }
+    }
+
+    // 如果找到未完成的遊戲，發送遊戲信息
+    if (currentGame) {
+      socket.emit("auth_success", {
+        userId,
+        gameInfo: {
+          gameId,
+          role: currentGame.players.red === userId ? "red" : "black",
+          currentPlayer: currentGame.currentPlayer,
+        },
+      });
+    } else {
+      // 一般認證成功響應
+      socket.emit("auth_success", { userId });
+    }
   }
 
   handleFindMatch(socket) {
@@ -134,7 +160,8 @@ class GameEventHandler {
         black: opponent.userId,
       },
       currentPlayer: "red",
-      board: GameLogic.createEmptyBoard(), // 初始化空棋盤
+      board: GameLogic.createEmptyBoard(),
+      status: "playing",
     };
 
     // 設置初始棋子位置
@@ -327,9 +354,110 @@ class GameEventHandler {
   }
 
   handleDisconnect(socket) {
-    const userId = this.onlineUsers.get(socket.id);
-    if (userId) {
-      this.cleanupUser(socket, userId);
+    const playerId = socket.userId;
+    // 查找玩家當前的遊戲
+    let currentGame = null;
+    let gameId = null;
+
+    for (const [id, game] of this.gameStates) {
+      if (game.players.red === playerId || game.players.black === playerId) {
+        currentGame = game;
+        gameId = id;
+        break;
+      }
+    }
+
+    if (currentGame) {
+      const opponent =
+        currentGame.players.red === playerId
+          ? currentGame.players.black
+          : currentGame.players.red;
+
+      // 記錄斷線時間
+      this.disconnectedPlayers.set(playerId, {
+        gameId,
+        disconnectTime: Date.now(),
+        opponent,
+      });
+
+      // 通知對手玩家斷線
+      socket.to(gameId).emit("opponent_disconnected", {
+        message: "對手已斷線，等待重連...",
+        playerId,
+      });
+
+      // 設置重連超時
+      setTimeout(() => {
+        if (this.disconnectedPlayers.has(playerId)) {
+          // 如果超時還沒重連，判定對手勝利
+          this.handleReconnectTimeout(gameId, playerId, opponent);
+        }
+      }, this.RECONNECT_TIMEOUT);
+    }
+  }
+
+  async handleReconnectTimeout(gameId, disconnectedPlayerId, opponentId) {
+    const game = this.gameStates.get(gameId);
+    if (game) {
+      // 更新遊戲狀態
+      game.status = "finished";
+
+      // 通知遊戲結束
+      this.io.to(gameId).emit("gameover", {
+        winner: opponentId,
+        reason: "disconnect",
+      });
+
+      // 更新遊戲統計
+      try {
+        // 更新勝者戰績
+        await this.updateUserStats(opponentId, true);
+        // 更新敗者戰績
+        await this.updateUserStats(disconnectedPlayerId, false);
+
+        // 通知前端更新戰績顯示
+        this.io.to(gameId).emit("statsUpdated");
+      } catch (error) {
+        console.error("更新戰績失敗:", error);
+      }
+
+      // 清理斷線記錄
+      this.disconnectedPlayers.delete(disconnectedPlayerId);
+      // 清理遊戲狀態
+      this.gameStates.delete(gameId);
+    }
+  }
+
+  handleReconnect(socket) {
+    const playerId = socket.userId;
+    const disconnectInfo = this.disconnectedPlayers.get(playerId);
+
+    if (disconnectInfo) {
+      const { gameId } = disconnectInfo;
+      const game = this.gameStates.get(gameId);
+
+      if (game && game.status === "playing") {
+        console.log("遊戲狀態:", game);
+        // 重新加入遊戲房間
+        socket.join(gameId);
+
+        // 通知對手重連成功
+        socket.to(gameId).emit("opponent_reconnected", {
+          message: "對手已重新連接",
+          playerId,
+        });
+
+        // 同步遊戲狀態給重連的玩家
+        socket.emit("game_state_sync", {
+          gameState: game.board,
+          currentTurn: game.currentPlayer,
+          role: game.players.red === playerId ? "red" : "black",
+          gameId: gameId,
+        });
+
+        // 清理斷線記錄
+        this.disconnectedPlayers.delete(playerId);
+      }
     }
   }
 
