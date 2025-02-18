@@ -6,6 +6,8 @@ const app = express();
 const setupGameSocket = require("../src/websocket/gameSocket");
 const db = require("../src/config/database");
 
+const TEST_PORT = 3000; // 移到全局作用域
+
 // 設置全局超時為 60 秒
 jest.setTimeout(3000000);
 
@@ -70,7 +72,6 @@ const waitForEvent = (socket, event, timeout = 5000) => {
 describe("配對系統測試", () => {
   let server;
   let clientSockets = [];
-  const TEST_PORT = 3000; // 使用不同的測試端口
 
   const testUsers = [
     { id: 1, username: "player1", rating: 1500 },
@@ -143,6 +144,14 @@ describe("配對系統測試", () => {
           });
         });
       }
+
+      // 關閉數據庫連接池
+      await new Promise((resolve) => {
+        db.end(() => {
+          console.log("Database connection pool closed");
+          resolve();
+        });
+      });
     } catch (error) {
       console.error("Cleanup error:", error);
       throw error;
@@ -297,7 +306,7 @@ describe("配對系統測試", () => {
     });
   });
 
-  test.only("玩家斷線後可以重連", async () => {
+  test("玩家斷線後可以重連", async () => {
     const { clients, users } = await setupTestClients(2);
     const [player1, player2] = clients;
 
@@ -315,6 +324,9 @@ describe("配對系統測試", () => {
 
     // 驗證重連成功
     expect(reconnectedPlayer.connected).toBe(true);
+
+    // 清理
+    reconnectedPlayer.disconnect();
   });
 
   test("玩家斷線超時後對手獲勝", async () => {
@@ -452,7 +464,7 @@ describe("配對系統壓力測試", () => {
     });
   });
 
-  test.only("應該能夠處理用戶斷線重連的情況", async () => {
+  test("應該能夠處理用戶斷線重連的情況", async () => {
     const RECONNECT_USERS = 20;
     const testUsers = Array.from({ length: RECONNECT_USERS }, (_, i) => ({
       id: i + 1,
@@ -530,3 +542,52 @@ describe("配對系統壓力測試", () => {
     );
   });
 });
+
+// 測試輔助函數
+async function setupTestClients(numClients) {
+  const testUsers = Array.from({ length: numClients }, (_, i) => ({
+    id: i + 1,
+    username: `player${i + 1}`,
+    rating: 1500,
+  }));
+
+  const clients = await Promise.all(
+    testUsers.map((user) => createClient(user.id, TEST_PORT))
+  );
+
+  return {
+    clients,
+    users: testUsers,
+  };
+}
+
+async function startGame(player1, player2) {
+  return new Promise((resolve) => {
+    // 監聽配對成功事件
+    player2.once("matchFound", () => {
+      resolve();
+    });
+
+    // 發送配對請求
+    player1.emit("findMatch");
+    player2.emit("findMatch");
+  });
+}
+
+async function reconnectPlayer(user) {
+  // 創建新的連接
+  const newSocket = await createClient(user.id, TEST_PORT);
+
+  // 等待重連成功
+  await new Promise((resolve) => {
+    newSocket.once("game_state_sync", (data) => {
+      console.log("重連同步數據:", data);
+      resolve();
+    });
+
+    // 發送重連請求
+    newSocket.emit("reconnect");
+  });
+
+  return newSocket;
+}
