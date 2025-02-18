@@ -12,6 +12,7 @@ class GameEventHandler {
     this.waitingPlayers = waitingPlayers;
     this.disconnectedPlayers = new Map(); // 記錄斷線的玩家和斷線時間
     this.RECONNECT_TIMEOUT = 60000; // 斷線重連超時時間（60秒）
+    this.MATCH_TIMEOUT = 120000; // 配對超時時間（120秒）
   }
 
   // 檢查玩家是否在遊戲中
@@ -354,6 +355,7 @@ class GameEventHandler {
   }
 
   handleDisconnect(socket) {
+    console.log("RECONNECT_TIMEOUT", this.RECONNECT_TIMEOUT);
     const playerId = socket.userId;
     // 查找玩家當前的遊戲
     let currentGame = null;
@@ -402,9 +404,13 @@ class GameEventHandler {
       // 更新遊戲狀態
       game.status = "finished";
 
+      // 確定獲勝者的顏色
+      const winnerColor = game.players.red === opponentId ? "red" : "black";
+
       // 通知遊戲結束
       this.io.to(gameId).emit("gameover", {
         winner: opponentId,
+        winnerColor: winnerColor,
         reason: "disconnect",
       });
 

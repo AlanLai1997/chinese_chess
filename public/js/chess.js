@@ -94,6 +94,8 @@ function setupSocketListeners() {
   });
 
   socket.on("matchFound", (data) => {
+    console.log("匹配成功");
+
     handleMatchFound(data);
   });
 
@@ -167,7 +169,7 @@ function setupSocketListeners() {
 
   socket.on("gameover", (data) => {
     console.log("遊戲結束:", data);
-    console.log("當前用戶ID:", socket.userId); // 用於調試
+    console.log("當前用戶ID:", socket.userId);
 
     if (data.reason === "checkmate") {
       // 將死結束的情況已在 moveMade 事件中處理
@@ -177,12 +179,13 @@ function setupSocketListeners() {
     // 根據不同結束原因顯示不同消息
     let message;
     if (data.reason === "surrender") {
-      // 如果我是獲勝者，就是對方投
       message = `遊戲結束 - ${
         data.winner === socket.userId ? "對方" : "我方"
       }投降`;
-    } else if (data.reason === "對手斷開連接") {
-      message = "對手已離開遊戲";
+    } else if (data.reason === "disconnect") {
+      message = `對手已離開遊戲，${
+        data.winnerColor === "red" ? "紅" : "黑"
+      }方獲勝`;
     } else {
       message = `遊戲結束，${data.winner}方獲勝`;
     }
@@ -227,15 +230,22 @@ function setupSocketListeners() {
       surrenderBtn.disabled = false;
     }
 
+    // 如果正在顯示等待重連畫面，隱藏它
+    hideWaitingScreen();
+
     renderBoard();
   });
 
   socket.on("opponent_disconnected", (data) => {
-    alert(data.message);
+    showWaitingScreen("對手已斷線，等待重連...", false);
   });
 
   socket.on("opponent_reconnected", (data) => {
-    alert(data.message);
+    hideWaitingScreen();
+    const statusText = document.getElementById("statusText");
+    if (statusText) {
+      statusText.textContent = "對手已重新連接，遊戲繼續！";
+    }
   });
 }
 
@@ -289,20 +299,47 @@ function initializeUI() {
   }
 }
 
-function showWaitingScreen() {
-  const statusText = document.getElementById("statusText");
-  if (statusText) {
-    statusText.textContent = "正在尋找對手...";
+function showWaitingScreen(message = "等待配對中...", showTimer = true) {
+  // 先移除可能存在的等待畫面
+  hideWaitingScreen();
+
+  const waitingScreen = document.createElement("div");
+  waitingScreen.className = "waiting-screen";
+  waitingScreen.innerHTML = `
+    <div class="waiting-content">
+      <div class="spinner"></div>
+      <p class="waiting-text">${message}</p>
+      ${showTimer ? '<p class="waiting-timer" id="waitingTimer">00:00</p>' : ""}
+      ${
+        message.includes("重連")
+          ? '<p class="reconnect-timer" id="reconnectTimer">60</p>'
+          : ""
+      }
+    </div>
+  `;
+  console.log("創建等待畫面");
+  document.body.appendChild(waitingScreen);
+  if (showTimer) {
+    startWaitingTimer();
   }
-  startWaitingTimer();
+  if (message.includes("重連")) {
+    startReconnectTimer();
+  }
 }
 
 function hideWaitingScreen() {
-  const statusText = document.getElementById("statusText");
-  if (statusText) {
-    statusText.textContent = "等待開始遊戲...";
+  console.log("隱藏等待畫面");
+  const waitingScreen = document.querySelector(".waiting-screen");
+  console.log("找到等待畫面元素:", waitingScreen);
+  if (waitingScreen) {
+    waitingScreen.remove();
+    console.log("等待畫面已移除");
   }
   stopWaitingTimer();
+  if (window.reconnectTimer) {
+    clearInterval(window.reconnectTimer);
+    window.reconnectTimer = null;
+  }
 }
 
 function enableGameControls() {
@@ -715,11 +752,26 @@ function startWaitingTimer() {
   try {
     stopWaitingTimer();
     waitingTime = 0;
-    updateWaitingTimeDisplay(waitingTime);
+    const timerElement = document.getElementById("waitingTimer");
 
     waitingTimer = setInterval(() => {
       waitingTime++;
-      updateWaitingTimeDisplay(waitingTime);
+      if (timerElement) {
+        const minutes = Math.floor(waitingTime / 60);
+        const seconds = waitingTime % 60;
+        timerElement.textContent = `${minutes
+          .toString()
+          .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+      }
+
+      // 超過120秒的處理
+      if (waitingTime >= 120) {
+        stopWaitingTimer();
+        hideWaitingScreen();
+        socket.emit("cancelMatch"); // 取消配對
+        alert("目前沒有玩家在線，請稍後再試");
+        resetGame();
+      }
     }, 1000);
   } catch (error) {
     console.error("計時器啟動錯誤:", error);
@@ -732,27 +784,10 @@ function stopWaitingTimer() {
     waitingTimer = null;
   }
   waitingTime = 0;
-  updateWaitingTimeDisplay(0);
-}
-
-function updateWaitingTimeDisplay(seconds) {
-  const waitingTimeElement = document.getElementById("waitingTime");
-  if (waitingTimeElement) {
-    waitingTimeElement.textContent = `等待時間: ${seconds}秒`;
-  }
-}
-
-// 啟用遊戲控制
-function enableGameControls() {
-  const findMatchBtn = document.getElementById("findMatchBtn");
-  if (findMatchBtn) {
-    findMatchBtn.disabled = false;
-    findMatchBtn.textContent = "開始配對";
-  }
 }
 
 function handleMatchFound(data) {
-  // 停止等待計時器
+  // 停止等待計時器並隱藏等待畫面
   stopWaitingTimer();
   hideWaitingScreen();
 
@@ -1085,4 +1120,22 @@ async function loadUserStats() {
   } catch (error) {
     console.error("載入用戶戰績失敗:", error);
   }
+}
+
+function startReconnectTimer() {
+  let timeLeft = 60; // 60秒重連時間
+  const timerElement = document.getElementById("reconnectTimer");
+
+  const timer = setInterval(() => {
+    timeLeft--;
+    if (timerElement) {
+      timerElement.textContent = `${timeLeft}秒`;
+    }
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+    }
+  }, 1000);
+
+  // 保存timer引用以便清除
+  window.reconnectTimer = timer;
 }
