@@ -58,6 +58,7 @@ function setupGameSocket(io) {
     });
 
     socket.on("cancelMatch", () => {
+      console.log("收到取消配對事件");
       if (!isAuthenticated) return;
       handler.handleCancelMatch(socket);
     });

@@ -332,7 +332,7 @@ class GameEventHandler {
 
     console.log("投降方:", surrenderingPlayer);
     console.log("獲勝方:", winner);
-
+    this.gameStates.delete(gameId);
     // 發送遊戲結束事件
     this.io.to(gameId).emit("gameover", {
       winner: winner,
@@ -600,6 +600,7 @@ class GameEventHandler {
       winner: winner,
       winnerId: winnerId,
     });
+    this.gameStates.delete(gameId);
 
     try {
       // 更新勝者戰績

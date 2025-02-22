@@ -87,12 +87,15 @@ function setupSocketListeners() {
     }
     enableGameControls();
   });
-
   socket.on("waiting", () => {
     showWaitingScreen();
     startWaitingTimer();
+    // 啟用取消配對按鈕
+    const cancelMatchBtn = document.getElementById("cancelMatchBtn");
+    if (cancelMatchBtn) {
+      cancelMatchBtn.disabled = false;
+    }
   });
-
   socket.on("matchFound", (data) => {
     console.log("匹配成功");
 
@@ -136,16 +139,12 @@ function setupSocketListeners() {
     // 處理音效和動畫效果
     if (effects) {
       if (isCheckmate) {
-        // 播放將死音效和動畫
         playSound("checkmate");
         showCheckmateAnimation();
-
-        // 將死時禁用棋盤，但保持顯示
         disableBoard();
 
-        // 延遲顯示遊戲結束對話框
         setTimeout(() => {
-          showGameResultDialog(winner);
+          showGameResultDialog(`${winner}方獲勝！`);
         }, 1500);
       } else {
         // 不是將死的情況下，處理其他音效
@@ -190,8 +189,7 @@ function setupSocketListeners() {
       message = `遊戲結束，${data.winner}方獲勝`;
     }
 
-    alert(message);
-    resetGame();
+    showGameResultDialog(message);
   });
 
   socket.on("statsUpdated", async () => {
@@ -302,7 +300,6 @@ function initializeUI() {
 function showWaitingScreen(message = "等待配對中...", showTimer = true) {
   // 先移除可能存在的等待畫面
   hideWaitingScreen();
-
   const waitingScreen = document.createElement("div");
   waitingScreen.className = "waiting-screen";
   waitingScreen.innerHTML = `
@@ -313,6 +310,11 @@ function showWaitingScreen(message = "等待配對中...", showTimer = true) {
       ${
         message.includes("重連")
           ? '<p class="reconnect-timer" id="reconnectTimer">60</p>'
+          : ""
+      }
+      ${
+        !message.includes("重連")
+          ? '<button onclick="socket.emit(\'cancelMatch\'); hideWaitingScreen();" class="cancel-btn">取消配對</button>'
           : ""
       }
     </div>
@@ -326,7 +328,6 @@ function showWaitingScreen(message = "等待配對中...", showTimer = true) {
     startReconnectTimer();
   }
 }
-
 function hideWaitingScreen() {
   console.log("隱藏等待畫面");
   const waitingScreen = document.querySelector(".waiting-screen");
@@ -519,35 +520,6 @@ function showCheckAnimation() {
   }, 1000);
 }
 
-function onPieceClick(event) {
-  event.stopPropagation();
-
-  const row = parseInt(event.target.dataset.row, 10);
-  const col = parseInt(event.target.dataset.col, 10);
-  const thisPiece = getPieceAt(row, col);
-
-  if (!thisPiece) return;
-
-  // 如果是當前玩家的棋子，選擇它
-  if (thisPiece.color === gameState.currentPlayer) {
-    selectPiece(row, col, event.target);
-    return;
-  }
-
-  // 如果是對手的棋子，且我方已選擇了棋子 => 嘗試吃子
-  if (selectedPiece && thisPiece.color !== gameState.currentPlayer) {
-    movePiece(selectedPiece.row, selectedPiece.col, row, col)
-      .then(handleMoveResult) // 使用 handleMoveResult 處理結果
-      .catch((error) => {
-        console.error("移動棋子失敗：", error);
-      });
-  } else if (thisPiece.color !== gameState.currentPlayer) {
-    // 如果是對手的棋子，但我方沒有選子 => 提示
-    const playerText = gameState.currentPlayer === "red" ? "紅方" : "黑方";
-    alert(`現在輪到${playerText}下棋`);
-  }
-}
-
 function updateTurnIndicator() {
   const indicator = document.querySelector(".turn-indicator");
   if (indicator) {
@@ -565,26 +537,6 @@ function updateTurnIndicator() {
 
   // 更新棋盤的當前玩家屬性
   boardElement.dataset.currentPlayer = gameState.currentPlayer;
-}
-
-// 移動棋子函數
-async function onEmptyCellClick(event) {
-  if (!selectedPiece) return;
-
-  const targetRow = parseInt(event.currentTarget.dataset.row, 10);
-  const targetCol = parseInt(event.currentTarget.dataset.col, 10);
-
-  try {
-    const moveResult = await movePiece(
-      selectedPiece.row,
-      selectedPiece.col,
-      targetRow,
-      targetCol
-    );
-    handleMoveResult(moveResult); // 使用 handleMoveResult 處理所有移動後的邏輯
-  } catch (error) {
-    console.error("移動棋子失敗：", error);
-  }
 }
 
 function resetGame() {
@@ -611,6 +563,7 @@ function resetGame() {
   const findMatchBtn = document.getElementById("findMatchBtn");
   const surrenderBtn = document.getElementById("surrenderBtn");
   const profileBtn = document.getElementById("profileBtn");
+  const cancelMatchBtn = document.getElementById("cancelMatchBtn");
 
   if (findMatchBtn) {
     findMatchBtn.disabled = false;
@@ -618,6 +571,10 @@ function resetGame() {
 
   if (surrenderBtn) {
     surrenderBtn.disabled = true;
+  }
+
+  if (cancelMatchBtn) {
+    cancelMatchBtn.disabled = false;
   }
 
   if (profileBtn) {
@@ -652,100 +609,6 @@ function resetGame() {
 
   // 回到等待配對狀態
   hideWaitingScreen();
-}
-async function handleMoveResult(moveResult) {
-  if (moveResult.status === "OK") {
-    // 检查是否有吃子 - 通过检查目标位置是否有棋子
-    const isCapture = selectedPiece && moveResult.targetPiece !== null;
-
-    // 更新游戏状态
-    gameState.currentPlayer = moveResult.currentPlayer;
-    renderBoard();
-
-    // 根据移动结果播放音效
-    if (moveResult.message === "checkmate") {
-      const winner = moveResult.winner === "red" ? "紅方" : "黑方";
-
-      // 创建游戏结束动画
-      const container = document.createElement("div");
-      container.className = "check-alert-container";
-
-      const messageDiv = document.createElement("div");
-      messageDiv.className = "check-alert";
-      messageDiv.textContent = `${winner}獲勝！`;
-
-      container.appendChild(messageDiv);
-      document.body.appendChild(container);
-
-      // 播放絕殺音效，取代原本的將軍音效
-      checkmateSound.play();
-
-      // 禁用所有棋子的点击事件
-      const pieces = document.querySelectorAll(".piece");
-      pieces.forEach((piece) => {
-        piece.style.pointerEvents = "none";
-      });
-
-      // 延迟显示重新开始提示
-      setTimeout(() => {
-        document.body.removeChild(container);
-        if (confirm(`遊戲結束，${winner}獲勝！\n是否要開始新局？`)) {
-          resetGame();
-        }
-      }, 2000);
-    } else if (moveResult.message === "將軍!!!") {
-      showCheckAnimation();
-      // 将军情况下也要判断是否同时吃子
-      if (isCapture) {
-        captureSound.play();
-      } else {
-        moveSound.play();
-      }
-    } else if (isCapture) {
-      // 如果目标位置有棋子，就是吃子
-      captureSound.play();
-    } else {
-      // 一般移动音效
-      moveSound.play();
-    }
-
-    selectedPiece = null;
-    updateTurnIndicator();
-  } else {
-    alert(`無效的移動：${moveResult.message}`);
-  }
-}
-
-async function movePiece(fromRow, fromCol, toRow, toCol) {
-  const targetPiece = currentBoard[toRow][toCol];
-  const response = await fetch("/api/game/move", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      fromRow,
-      fromCol,
-      toRow,
-      toCol,
-      targetPiece,
-    }),
-  });
-
-  const data = await response.json();
-  if (data.status === "OK") {
-    if (socket && socket.connected && currentGameId) {
-      socket.emit("makeMove", {
-        gameId: currentGameId,
-        from: { row: fromRow, col: fromCol },
-        to: { row: toRow, col: toCol },
-        piece: currentBoard[fromRow][fromCol],
-      });
-    }
-
-    data.targetPiece = targetPiece;
-    return data;
-  } else {
-    throw new Error(data.message);
-  }
 }
 
 function startWaitingTimer() {
@@ -794,7 +657,7 @@ function handleMatchFound(data) {
   // 保存遊戲信息
   currentGameId = data.gameId;
   opponentId = data.opponent.id;
-  playerRole = data.opponent.role; // 直接使用服務器分配的角色
+  playerRole = data.opponent.role;
 
   console.log(
     `Match found! Game ID: ${currentGameId}, Opponent: ${opponentId}, Role: ${playerRole}`
@@ -808,21 +671,15 @@ function handleMatchFound(data) {
     }`;
   }
 
-  // 初始化遊戲狀態
-  gameState = {
-    currentPlayer: "red", // 紅方先手
-    gameId: currentGameId,
-    playerRole: playerRole,
-  };
-
-  // 初始化並設置棋盤
-  initializeBoard();
-
-  // 根據角色設置初始狀態
-  if (playerRole === "black") {
-    disableBoard();
-  } else {
-    enableBoard();
+  // 禁用配對相關按鈕
+  const findMatchBtn = document.getElementById("findMatchBtn");
+  const cancelMatchBtn = document.getElementById("cancelMatchBtn");
+  if (findMatchBtn) {
+    console.log("禁用配對按鈕");
+    findMatchBtn.disabled = true;
+  }
+  if (cancelMatchBtn) {
+    cancelMatchBtn.disabled = true;
   }
 
   // 啟用投降按鈕
@@ -832,8 +689,18 @@ function handleMatchFound(data) {
     surrenderBtn.disabled = false;
   }
   if (profileBtn) {
-    profileBtn.disabled = true; // 遊戲開始時禁用個人資料按鈕
+    profileBtn.disabled = true;
   }
+
+  // 初始化遊戲狀態
+  gameState = {
+    currentPlayer: "red",
+    gameId: currentGameId,
+    playerRole: playerRole,
+  };
+
+  // 初始化並設置棋盤
+  initializeBoard();
 }
 
 // 渲染空棋盤（用於等待配對時）
@@ -923,6 +790,7 @@ function playMoveSound(targetPiece) {
     moveSound.play().catch((err) => console.error("播放音效失敗:", err));
   }
 }
+async;
 
 // 修改 tryMove 函數
 async function tryMove(fromRow, fromCol, toRow, toCol) {
@@ -1017,7 +885,7 @@ function removeAllAnimations() {
 }
 
 // 添加一個顯示遊戲結果對話框的函數
-function showGameResultDialog(winner) {
+function showGameResultDialog(message) {
   // 移除舊的對話框（如果存在）
   const oldDialog = document.querySelector(".game-result-dialog");
   if (oldDialog) {
@@ -1031,7 +899,7 @@ function showGameResultDialog(winner) {
   // 創建結果文字
   const resultText = document.createElement("div");
   resultText.className = "result-text";
-  resultText.textContent = `${winner}方獲勝！`;
+  resultText.textContent = message;
 
   // 創建按鈕容器
   const buttonContainer = document.createElement("div");
