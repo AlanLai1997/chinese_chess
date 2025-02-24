@@ -111,6 +111,7 @@ exports.register = async (req, res) => {
 // 登入控制器
 exports.login = async (req, res) => {
   try {
+    console.log("開始登入流程:", req.body.email);
     const { email, password } = req.body;
 
     // 驗證輸入
@@ -126,6 +127,7 @@ exports.login = async (req, res) => {
       "SELECT id, username, email, password_hash FROM users WHERE email = $1",
       [email]
     );
+    console.log("查找用戶結果:", result.rows.length > 0);
 
     if (result.rows.length === 0) {
       return res.status(401).json({ error: "用戶不存在" });
@@ -150,7 +152,7 @@ exports.login = async (req, res) => {
         });
       }
 
-      // 返回成功響應
+      console.log("登入成功，session 已設置:", req.session);
       return res.json({
         success: true,
         user: {
