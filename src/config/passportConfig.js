@@ -18,6 +18,13 @@ passport.deserializeUser(async (id, done) => {
     done(error);
   }
 });
+
+if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+  console.error("Missing Google OAuth credentials:");
+  console.error("GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID);
+  console.error("GOOGLE_CLIENT_SECRET:", process.env.GOOGLE_CLIENT_SECRET);
+}
+
 // 配置 Google 策略
 passport.use(
   new GoogleStrategy(
