@@ -60,6 +60,7 @@ createSessionTable().then(() => {
         secure: process.env.NODE_ENV === "production",
         maxAge: 24 * 60 * 60 * 1000, // 24 小時
         httpOnly: true,
+        sameSite: "none", // 允許跨站點 cookie
       },
       store: new pgSession({
         pool: db.pool,
@@ -68,6 +69,11 @@ createSessionTable().then(() => {
       }),
     })
   );
+
+  // 在生產環境中信任代理
+  if (process.env.NODE_ENV === "production") {
+    app.set("trust proxy", 1);
+  }
 
   app.use(passport.initialize());
   app.use(passport.session());
