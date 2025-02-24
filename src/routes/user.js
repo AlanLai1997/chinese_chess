@@ -41,41 +41,7 @@ router.get("/profile", async (req, res) => {
   }
 });
 
-// 獲取對戰歷史
-// router.get("/game-history", async (req, res) => {
-//   if (!req.isAuthenticated()) {
-//     return res.status(401).json({ message: "未登入" });
-//   }
-
-//   try {
-//     const historyQuery = await db.query(
-//       `SELECT
-//         g.created_at,
-//         u2.username as opponent,
-//         g.result,
-//         g.rating_change
-//        FROM games g
-//        LEFT JOIN users u2 ON g.opponent_id = u2.id
-//        WHERE g.user_id = $1
-//        ORDER BY g.date DESC
-//        LIMIT 10`,
-//       [req.user.id]
-//     );
-
-//     res.json({
-//       history: historyQuery.rows.map((game) => ({
-//         date: game.created_at,
-//         opponent: game.opponent,
-//         result: game.result,
-//         ratingChange: game.rating_change,
-//       })),
-//     });
-//   } catch (error) {
-//     console.error("獲取對戰歷史錯誤:", error);
-//     res.status(500).json({ message: "獲取對戰歷史失敗" });
-//   }
-// });
-
+// 獲取用戶ID
 router.get("/current", (req, res) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ error: "未登入" });
