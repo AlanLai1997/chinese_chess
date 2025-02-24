@@ -14,7 +14,7 @@ const setupGameSocket = require("./src/websocket/gameSocket");
 const PORT = 3000;
 const db = require("./src/config/database");
 const pgSession = require("connect-pg-simple")(session);
-
+console.log("GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID);
 // 中間件設置
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

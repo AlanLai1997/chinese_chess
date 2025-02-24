@@ -18,7 +18,6 @@ passport.deserializeUser(async (id, done) => {
     done(error);
   }
 });
-
 // 配置 Google 策略
 passport.use(
   new GoogleStrategy(
@@ -27,6 +26,7 @@ passport.use(
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackURL: "/api/auth/google/callback",
     },
+
     async function (accessToken, refreshToken, profile, done) {
       try {
         const email = profile.emails[0].value;
