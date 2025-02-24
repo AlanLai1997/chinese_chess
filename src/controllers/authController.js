@@ -9,6 +9,7 @@ const db = require("../config/database");
 
 // 註冊控制器
 exports.register = async (req, res) => {
+  console.log("收到註冊請求:", req.body);
   const { username, email, password } = req.body;
 
   // 輸入驗證
@@ -70,6 +71,7 @@ exports.register = async (req, res) => {
       RETURNING id, username, email, rating`,
       [username, email, passwordHash]
     );
+    console.log("用戶創建成功:", result.rows[0]);
 
     // 創建用戶的遊戲設置
     await db.query(
@@ -80,6 +82,7 @@ exports.register = async (req, res) => {
       ) VALUES ($1, true, true)`,
       [result.rows[0].id]
     );
+    console.log("遊戲設置創建成功");
 
     // 自動登入
     req.login(result.rows[0], (err) => {
