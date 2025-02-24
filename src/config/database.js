@@ -1,13 +1,7 @@
 // src/database.js
 const { Pool } = require("pg");
 
-// 檢查數據庫配置
-console.log("=== 數據庫配置檢查 ===");
-console.log("DB Host:", process.env.PGHOST);
-console.log("DB User:", process.env.PGUSER);
-console.log("DB Name:", process.env.PGDATABASE);
-console.log("DB Port:", process.env.PGPORT);
-console.log("=====================");
+// 檢查數據庫配
 
 // Read database configuration from environment variables
 const pool = new Pool({
