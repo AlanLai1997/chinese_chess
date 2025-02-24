@@ -382,6 +382,17 @@ class GameEventHandler {
         opponent,
       });
 
+      // 檢查對手是否也已斷線
+      const opponentDisconnectInfo = this.disconnectedPlayers.get(opponent);
+      if (opponentDisconnectInfo && opponentDisconnectInfo.gameId === gameId) {
+        // 兩個玩家都斷線了，清理遊戲資源
+        this.gameStates.delete(gameId);
+        this.disconnectedPlayers.delete(playerId);
+        this.disconnectedPlayers.delete(opponent);
+        console.log(`遊戲 ${gameId} 已取消 - 所有玩家斷線`);
+        return;
+      }
+
       // 通知對手玩家斷線
       socket.to(gameId).emit("opponent_disconnected", {
         message: "對手已斷線，等待重連...",

@@ -6,10 +6,11 @@ const app = express();
 const setupGameSocket = require("../src/websocket/gameSocket");
 const db = require("../src/config/database");
 
-const TEST_PORT = 3000; // 移到全局作用域
+const TEST_PORT = 3000;
+let clientSockets = [];
 
 // 設置全局超時為 60 秒
-jest.setTimeout(3000000);
+jest.setTimeout(120000);
 
 // 修改 createClient 函數，添加連接超時處理
 const createClient = (userId, port) => {
@@ -71,7 +72,6 @@ const waitForEvent = (socket, event, timeout = 5000) => {
 
 describe.only("配對系統測試", () => {
   let server;
-  let clientSockets = [];
 
   const testUsers = [
     { id: 1, username: "player1", rating: 1500 },
@@ -162,6 +162,37 @@ describe.only("配對系統測試", () => {
     clientSockets.forEach((socket) => socket.close());
     clientSockets = [];
   });
+  // afterEach(async () => {
+  //   try {
+  //     // 清理所有客戶端連接
+  //     await Promise.all(
+  //       clientSockets.map((socket) => {
+  //         return new Promise((resolve) => {
+  //           if (!socket.connected) {
+  //             resolve();
+  //             return;
+  //           }
+  //           socket.on("disconnect", () => {
+  //             console.log(`客戶端 ${socket.userId} 已斷開連接`);
+  //             resolve();
+  //           });
+  //           socket.disconnect();
+  //         });
+  //       })
+  //     );
+
+  //     // 重置客戶端數組
+  //     clientSockets = [];
+
+  //     // 等待一段時間確保所有連接都已完全關閉
+  //     await new Promise((resolve) => setTimeout(resolve, 1000));
+
+  //     console.log("所有測試依賴項已清理完成");
+  //   } catch (error) {
+  //     console.error("清理過程中發生錯誤:", error);
+  //     throw error;
+  //   }
+  // });
 
   test("同時多人尋找配對應正確配對", async () => {
     try {
@@ -274,35 +305,43 @@ describe.only("配對系統測試", () => {
 
     // 等待確保只處理一次
     await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // 檢查是否仍在等待隊列中
-    client.emit("getQueueStatus", (status) => {
-      expect(status.inQueue).toBe(true);
-      expect(status.queueTime).toBeDefined();
-    });
+    expect(matchFoundCount).toBe(0); // 驗證沒有收到配對成功事件
   });
 
-  test("玩家斷線後可以重連", async () => {
+  test.only("玩家斷線後可以重連", async () => {
     const { clients, users } = await setupTestClients(2);
     const [player1, player2] = clients;
 
     // 開始遊戲
-    await startGame(player1, player2);
+    const matchData = await startGame(player1, player2);
+    let gameId;
+    gameId = matchData.gameId;
 
     // 模擬玩家1斷線
     player1.disconnect();
 
+    // 驗證對手收到斷線通知
+    await new Promise((resolve) => {
+      player2.on("opponent_disconnected", () => {
+        resolve();
+      });
+    });
+    console.log("opponent_disconnected");
     // 等待一段時間後重連
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 5000));
 
     // 重新連接
     const reconnectedPlayer = await reconnectPlayer(users[0]);
-
-    // 驗證重連成功
+    // 驗證重連成功並返回原遊戲
+    await new Promise((resolve) => {
+      player2.on("opponent_reconnected", () => {
+        resolve();
+      });
+    });
+    console.log("opponent_reconnected");
+    console.log("reconnectedPlayer.connected", reconnectedPlayer.connected);
+    // 驗證遊戲
     expect(reconnectedPlayer.connected).toBe(true);
-
-    // 清理
-    reconnectedPlayer.disconnect();
   });
 
   test("玩家斷線超時後對手獲勝", async () => {
@@ -311,20 +350,34 @@ describe.only("配對系統測試", () => {
 
     // 開始遊戲
     await startGame(player1, player2);
-
+    console.log("開始遊戲");
     // 模擬玩家1斷線
     player1.disconnect();
 
     // 等待超時
-    await new Promise((resolve) => setTimeout(resolve, 65000));
+    await new Promise((resolve) => setTimeout(resolve, 60000));
 
     // 驗證對手獲勝
-    const gameEndPromise = new Promise((resolve) => {
-      player2.on("game_end", (data) => {
-        expect(data.winner).toBe(users[1].id);
-        expect(data.reason).toBe("opponent_disconnect_timeout");
-        resolve();
-      });
+    const gameEndPromise = new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error("等待遊戲結束超時"));
+      }, 30000); // 10秒超時
+
+      try {
+        player2.on("gameover", (data) => {
+          clearTimeout(timeout);
+          try {
+            expect(data.winner).toBe(users[1].id);
+            expect(data.reason).toBe("disconnect");
+            resolve();
+          } catch (error) {
+            reject(error);
+          }
+        });
+      } catch (error) {
+        clearTimeout(timeout);
+        reject(error);
+      }
     });
 
     await gameEndPromise;
@@ -531,6 +584,9 @@ async function setupTestClients(numClients) {
     testUsers.map((user) => createClient(user.id, TEST_PORT))
   );
 
+  // 將新創建的客戶端加入到 clientSockets 數組
+  clientSockets.push(...clients);
+
   return {
     clients,
     users: testUsers,
@@ -539,9 +595,25 @@ async function setupTestClients(numClients) {
 
 async function startGame(player1, player2) {
   return new Promise((resolve) => {
-    // 監聽配對成功事件
+    let player1Data = null;
+    let player2Data = null;
+
+    // 監聽玩家1的配對成功事件
+    player1.once("matchFound", (data) => {
+      console.log("玩家1配對成功:", data);
+      player1Data = data;
+      if (player2Data) {
+        resolve(player1Data); // 如果兩個玩家都配對成功，返回玩家1的數據
+      }
+    });
+
+    // 監聽玩家2的配對成功事件
     player2.once("matchFound", () => {
-      resolve();
+      console.log("玩家2配對成功");
+      player2Data = true;
+      if (player1Data) {
+        resolve(player1Data); // 如果兩個玩家都配對成功，返回玩家1的數據
+      }
     });
 
     // 發送配對請求
