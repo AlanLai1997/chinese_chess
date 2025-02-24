@@ -25,6 +25,12 @@ if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
   console.error("GOOGLE_CLIENT_SECRET:", process.env.GOOGLE_CLIENT_SECRET);
 }
 
+// 檢查 OAuth 配置
+console.log("=== OAuth 配置檢查 ===");
+console.log("Client ID:", process.env.GOOGLE_CLIENT_ID);
+console.log("Callback URL:", "/api/auth/google/callback");
+console.log("===================");
+
 // 配置 Google 策略
 passport.use(
   new GoogleStrategy(
