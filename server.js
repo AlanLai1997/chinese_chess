@@ -9,7 +9,16 @@ const http = require("http");
 const socketIO = require("socket.io");
 const app = express();
 const server = http.createServer(app); // 創建 HTTP server
-const io = socketIO(server);
+const io = socketIO(server, {
+  cors: {
+    origin:
+      process.env.NODE_ENV === "production"
+        ? "https://chinese-chess-git-master-alanlais-projects.vercel.app" // 你的 Vercel 域名
+        : "http://localhost:3000",
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
 const setupGameSocket = require("./src/websocket/gameSocket");
 const PORT = 3000;
 const db = require("./src/config/database");
