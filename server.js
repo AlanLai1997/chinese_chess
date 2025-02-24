@@ -12,7 +12,7 @@ const server = http.createServer(app); // 創建 HTTP server
 const io = socketIO(server, {
   cors: {
     origin:
-      process.env.NODE_ENV === "production"
+      process.env.NODE_ENV === "Production"
         ? "https://chinese-chess-git-master-alanlais-projects.vercel.app" // 你的 Vercel 域名
         : "http://localhost:3000",
     methods: ["GET", "POST"],
@@ -60,7 +60,7 @@ createSessionTable().then(() => {
       resave: false,
       saveUninitialized: false,
       cookie: {
-        secure: process.env.NODE_ENV === "production",
+        secure: process.env.NODE_ENV === "Production",
         maxAge: 24 * 60 * 60 * 1000, // 24 小時
         httpOnly: true,
       },
